@@ -89,10 +89,13 @@ class NeuralNetwork(object):
     def weight_matrices(self):
         """Generator of weight matrices, with each weight matrix representing
         the weights between a pair of adjacent layers, starting with the
-        connections between the input layer and the layer above
+        connections between the input layer and the layer above.
+
+        NOTE: The weight matrices are a view of the weight vector, so updating
+        a value in the matrix changes the value in the vector and vice versa
         """
         if len(self.hidden_layers) == 0:
-            yield self.weights.reshape(self.num_inputs + 1, self.num_outputs)
+            yield self.weights.reshape(self.num_outputs, self.num_inputs + 1)
         else:
             total_conns = 0
             for num_neurons_a, num_neurons_b in \
@@ -100,7 +103,7 @@ class NeuralNetwork(object):
                 conns_bn_cur_layers = (num_neurons_a + 1) * num_neurons_b
                 yield self.weights[total_conns:
                                    total_conns + conns_bn_cur_layers].reshape(
-                    num_neurons_a + 1, num_neurons_b)
+                    num_neurons_b, num_neurons_a + 1)
                 total_conns += conns_bn_cur_layers
 
     @property
@@ -116,7 +119,7 @@ class NeuralNetwork(object):
                                 [self.num_outputs]))
 
     def random_weights(self, low=-0.1, high=0.1):
-        """Return an np.array of random weights. Useful for initialization"""
+        """Return a np.array of random weights. Useful for initialization"""
         return np.random.uniform(low, high, self.num_weights)
 
     def compute_output(self):
