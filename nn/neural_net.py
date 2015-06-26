@@ -129,3 +129,44 @@ class NeuralNetwork(object):
     def train(self):
         # Implementation must be provided in subclasses
         raise NotImplementedError
+
+
+class SimpleNN(NeuralNetwork):
+    def __init__(self, num_inputs, num_outputs, hidden_layers,
+                 activation_funcs, choose_output,
+                 weight_min=-0.1, weight_max=0.1):
+        if len(hidden_layers) != 0:
+            raise ValueError("No hidden layers supported in %s" %
+                             SimpleNN.__name__)
+
+        super(SimpleNN, self).__init__(num_inputs, num_outputs, hidden_layers,
+                                       activation_funcs, weight_min=weight_min,
+                                       weight_max=weight_max)
+        self.choose_output = choose_output
+
+    def compute_output(self, input_vec):
+        weights = next(self.weight_matrices)
+        assert weights.shape[1] == len(input_vec), \
+            "Dimension mismatch. Columns in weight weights: %d, input_vec" \
+            "size: %d. Missing bias term from input?" % (weights.shape[1],
+                                                         len(input_vec))
+
+        return self.choose_output(map(self.activation_funcs[0],
+                                      np.dot(weights, input_vec)))
+
+    def train(self, xs, ys, step, compute_error, stop_training):
+        epochs = 0
+        total_error = float('inf')
+        weights = next(self.weight_matrices)
+        while not stop_training(epochs, total_error):
+            total_error = 0
+            epochs += 1
+            if epochs % 100 == 0:
+                print "Epoch %d..." % epochs
+            for x, y in it.izip(xs, ys):
+                # Add bias term to input
+                x = np.append(x, 1)
+                output = self.compute_output(x)
+                weights[y, np.where(x > 0)] += step
+                weights[output, np.where(x > 0)] -= step
+                total_error += compute_error(output, y)
